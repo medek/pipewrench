@@ -1,0 +1,11 @@
+[window]
+width = 1280
+height = 720
+fullscreen = false
+
+[keybind]
+Forward = "W"
+Left = "A"
+Right = "D"
+Back = "S"
+Fire = "E"
