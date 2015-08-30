@@ -12,6 +12,7 @@ pub enum PWError {
     ImageError(image::ImageError),
     GenericError(String),
     TomlParseError(Vec<ParserError>),
+    EmptyKey,
 }
 
 pub type PWResult<T> = Result<T, PWError>;
@@ -38,6 +39,9 @@ impl Display for PWError {
                     s.push('\n');
                 }
                 fmt.write_str(&s)
+            },
+            PWError::EmptyKey => {
+                fmt.write_str("EmptyKey in Config::Set")
             }
         }
     }
@@ -50,7 +54,8 @@ impl Error for PWError {
             PWError::IOError(ref e) => e.description(),
             PWError::ImageError(ref e) => e.description(),
             PWError::GenericError(ref s) => &s,
-            PWError::TomlParseError(_) => "TomlParseError"
+            PWError::TomlParseError(_) => "TomlParseError",
+            PWError::EmptyKey => "EmptyKey"
         }
     }
 

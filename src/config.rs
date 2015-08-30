@@ -8,12 +8,19 @@ use sdl2::keyboard::Keycode;
 
 pub use toml::{Value, Table};
 
+#[derive(Debug)]
 pub struct Config {
     config: Value
 }
 
 impl Config {
-    pub fn new(config: &str) -> PWResult<Config> {
+    pub fn new() -> Config {
+        Config {
+            config: Value::Table(Table::new())
+        }
+    }
+
+    pub fn from_file(config: &str) -> PWResult<Config> {
         let mut f = try!(File::open(&Path::new(config)));
         let mut conf:String = "".to_string();
         try!(f.read_to_string(&mut conf));
@@ -74,15 +81,22 @@ impl Config {
         Some(Binding::Key(state, keycode))
     }
 
-    fn __insert<'a, I>(mut t: &mut Table, val: Value, keys: &mut I) where I: Iterator<Item=&'a str> {
+    fn __insert<'a, I>(mut t: &mut Table, val: Value, keys: &mut I) -> PWResult<()> where I: Iterator<Item=&'a str> {
         let mut tmp = Table::new();
         let mut peek = keys.peekable();
         tmp.insert(peek.next().unwrap().to_string(), val);
 
         loop {
             let key = match peek.next() {
-                Some(k) => k,
-                None => break
+                Some(k) => {
+                    if k.len() == 0 {
+                        return Err(PWError::EmptyKey)
+                    }
+                    else {
+                        k
+                    }
+                },
+                None => return Err(PWError::EmptyKey)
             };
             if peek.peek().is_none() {
                 t.insert(key.to_string(), Value::Table(tmp));
@@ -92,20 +106,27 @@ impl Config {
             tmp2.insert(key.to_string(), Value::Table(tmp));
             tmp = tmp2;
         }
+        Ok(())
     }
 
-    fn __set<'a, I>(mut t: &mut Table, val: Value, keys: &mut I) where I: Iterator<Item=&'a str> {
+    fn __set<'a, I>(mut t: &mut Table, val: Value, keys: &mut I) -> PWResult<()> where I: Iterator<Item=&'a str> {
         let key = match keys.next() {
-            Some(k) => k,
-            None => return
+            Some(k) => {
+                if k.len() == 0 {
+                    return Err(PWError::EmptyKey)
+                }
+                else {
+                    k
+                }
+            },
+            None => return Err(PWError::EmptyKey)
         };
 
         match t.get_mut(key) {
             Some(v) => {
                 match v {
                     &mut Value::Table(ref mut hm) => {
-                        Config::__set(hm, val, keys);
-                        return
+                        return Config::__set(hm, val, keys)
                     },
                     _ => {}
                 }
@@ -116,22 +137,23 @@ impl Config {
         let mut rev:Vec<&str> = keys.collect();
         if rev.len() == 0 {
             t.insert(key.to_string(), val);
-            return
+            return Ok(())
         }
 
         rev.insert(0, key);
         let mut itr = rev.into_iter().rev();
-        Config::__insert(t, val, &mut itr);
+        Config::__insert(t, val, &mut itr)
     }
 
     //if key already exists it's overwritten
-    pub fn set(&mut self, name: &str, val: Value) {
+    pub fn set(&mut self, name: &str, val: Value) -> PWResult<()> {
+        if name.len() == 0 { return Err(PWError::EmptyKey) }
         let curr = match self.config {
             Value::Table(ref mut hm) => hm,
             _ => unreachable!()
         };
 
         let itr:Vec<&str> = name.split('.').collect();
-        Config::__set(curr, val, &mut itr.into_iter());
+        Config::__set(curr, val, &mut itr.into_iter())
     }
 }

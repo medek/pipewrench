@@ -18,7 +18,7 @@ enum Command {
 }
 
 fn main() {
-    let config = main_try!(Config::new("./examples/config.toml"));
+    let config = main_try!(Config::from_file("./examples/config.toml"));
     let sdl = main_try!(sdl2::init());
     let video = main_try!(sdl.video());
     let win = main_try!(Window::new(&video, "Simple Window",
