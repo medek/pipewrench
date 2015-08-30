@@ -18,3 +18,24 @@ macro_rules! println_err {
             Err(e) => panic!("Unable to write to stderr: {}", e)
         })
 }
+
+#[macro_export]
+macro_rules! config_string {
+    ($expr:expr) => (
+            $crate::config::Value::String($expr.to_string())
+        )
+}
+
+#[macro_export]
+macro_rules! config_int {
+    ($expr:expr) => (
+        $crate::config::Value::Integer($expr as i64)
+        )
+}
+
+#[macro_export]
+macro_rules! config_bool {
+    ($expr:expr) => (
+        $crate::config::Value::Boolean($expr as bool)
+        )
+}

@@ -4,7 +4,8 @@ extern crate sdl2;
 extern crate glium;
 
 use sdl2::event::Event;
-use pipewrench::{Window,Input,Binding, BindingState, Config};
+use pipewrench::{Window, Input, BindingState, Keycode};
+use pipewrench::config::Config;
 use glium::Surface;
 
 #[derive(Debug,Clone)]
@@ -20,7 +21,7 @@ fn main() {
     let config = main_try!(Config::new("./examples/config.toml"));
     let sdl = main_try!(sdl2::init());
     let video = main_try!(sdl.video());
-    let win = main_try!(Window::new(video, "Simple Window",
+    let win = main_try!(Window::new(&video, "Simple Window",
                                     config.value_int("window.width").unwrap_or(1280) as u32,
                                     config.value_int("window.height").unwrap_or(720) as u32));
     let mut running = true;
@@ -44,9 +45,14 @@ fn main() {
                 _ => {}
             }
         }
+
         input.key_state(event_pump.keyboard_state());
         for command in input.command_iter() {
             println!("{:?}", command);
+        }
+
+        if input.key_pressed(Keycode::Escape) {
+            running = false
         }
     }
 }

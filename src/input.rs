@@ -1,10 +1,8 @@
-use sdl2::event::Event;
-use sdl2::keyboard::{Keycode, KeyboardState};
+use sdl2::keyboard::KeyboardState;
 use std::collections::HashMap;
-use sdl2::joystick::{Joystick, Guid};
 use std::collections::HashSet;
-use result::*;
 
+pub use sdl2::keyboard::Keycode;
 #[derive(Debug,PartialEq,Hash,Clone)]
 pub enum BindingState {
     Pressed,
@@ -73,6 +71,14 @@ impl<T> Input<T> where T: Sized + Clone {
 
             self.command_buffer.push(command.unwrap().clone());
         }
+    }
+
+    pub fn key_pressed(&self, keycode: Keycode) -> bool {
+        (&self.keys - &self.old_keys).contains(&keycode)
+    }
+
+    pub fn key_held(&self, keycode: Keycode) -> bool {
+        self.keys.contains(&keycode) && self.old_keys.contains(&keycode)
     }
 
     pub fn command_iter(&mut self) -> ::std::slice::Iter<T> {

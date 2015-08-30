@@ -9,9 +9,8 @@ mod macros;
 mod result;
 mod window;
 mod input;
-mod config;
+pub mod config;
 
 pub use result::*;
 pub use window::*;
 pub use input::*;
-pub use config::*;
