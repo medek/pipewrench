@@ -5,21 +5,24 @@ use std::path::Path;
 use std::io::{Read, Write};
 use input::{Binding, BindingState};
 use sdl2::keyboard::Keycode;
-
+use std::collections::btree_map::Entry;
 pub use toml::{Value, Table};
 
+///! Toml backed config file
 #[derive(Debug)]
 pub struct Config {
     config: Value
 }
 
 impl Config {
+    ///! Create a new empty config
     pub fn new() -> Config {
         Config {
             config: Value::Table(Table::new())
         }
     }
 
+    ///! Create config from a toml file
     pub fn from_file(config: &str) -> PWResult<Config> {
         let mut f = try!(File::open(&Path::new(config)));
         let mut conf:String = "".to_string();
@@ -33,6 +36,7 @@ impl Config {
         }
     }
 
+    ///! Save config to toml file
     pub fn save(&self, config: &str) -> PWResult<()> {
         let mut f = try!(OpenOptions::new().write(true).open(&Path::new(config)));
         try!(writeln!(f, "{}", self.config));
@@ -59,6 +63,7 @@ impl Config {
 
     //it actually is reachable!
     #[allow(unreachable_code)]
+    ///! Treat key as a Binding
     pub fn keybinding(&self, name: &str, state: BindingState) -> Option<Binding> {
         let v = self.config.lookup(name);
         if v.is_none() {
@@ -81,79 +86,68 @@ impl Config {
         Some(Binding::Key(state, keycode))
     }
 
-    fn __insert<'a, I>(mut t: &mut Table, val: Value, keys: &mut I) -> PWResult<()> where I: Iterator<Item=&'a str> {
-        let mut tmp = Table::new();
-        let mut peek = keys.peekable();
-        tmp.insert(peek.next().unwrap().to_string(), val);
-
-        loop {
-            let key = match peek.next() {
-                Some(k) => {
-                    if k.len() == 0 {
-                        return Err(PWError::EmptyKey)
-                    }
-                    else {
-                        k
-                    }
-                },
-                None => return Err(PWError::EmptyKey)
-            };
-            if peek.peek().is_none() {
-                t.insert(key.to_string(), Value::Table(tmp));
-                break;
-            }
-            let mut tmp2 = Table::new();
-            tmp2.insert(key.to_string(), Value::Table(tmp));
-            tmp = tmp2;
-        }
-        Ok(())
-    }
-
-    fn __set<'a, I>(mut t: &mut Table, val: Value, keys: &mut I) -> PWResult<()> where I: Iterator<Item=&'a str> {
-        let key = match keys.next() {
-            Some(k) => {
-                if k.len() == 0 {
-                    return Err(PWError::EmptyKey)
-                }
-                else {
-                    k
-                }
-            },
-            None => return Err(PWError::EmptyKey)
-        };
-
-        match t.get_mut(key) {
-            Some(v) => {
-                match v {
-                    &mut Value::Table(ref mut hm) => {
-                        return Config::__set(hm, val, keys)
-                    },
-                    _ => {}
-                }
-            },
-            None => {}
-        };
-
-        let mut rev:Vec<&str> = keys.collect();
-        if rev.len() == 0 {
-            t.insert(key.to_string(), val);
-            return Ok(())
-        }
-
-        rev.insert(0, key);
-        let mut itr = rev.into_iter().rev();
-        Config::__insert(t, val, &mut itr)
-    }
-
-    //if key already exists it's overwritten
+    ///! Set key to value, if value already exists, it's overwritten
     pub fn set(&mut self, name: &str, val: Value) -> PWResult<()> {
         if name.len() == 0 { return Err(PWError::EmptyKey) }
-        let curr = match self.config {
+        let mut curr = match self.config {
             Value::Table(ref mut hm) => hm,
             _ => unreachable!()
         };
 
-        let itr:Vec<&str> = name.split('.').collect();
-        Config::__set(curr, val, &mut itr.into_iter())
+        let keys:Vec<&str> = name.split('.').collect();
+
+        for k in keys.clone().into_iter().take(keys.len()-1) {
+            let mut tmp = curr;
+            if k.len() == 0 { return Err(PWError::EmptyKey) }
+            curr = match tmp.entry(k.to_string()) {
+                Entry::Vacant(slot) => match slot.insert(Value::Table(Table::new())) {
+                    &mut Value::Table(ref mut t) => t,
+                    _ => unreachable!()
+                },
+                Entry::Occupied(slot) => {
+                    let v = slot.into_mut();
+                    match v {
+                        &mut Value::Table(ref mut t) => t,
+                        _ => {
+                            *v = Value::Table(Table::new());
+                            match v {
+                                &mut Value::Table(ref mut t) => t,
+                                _ => unreachable!()
+                            }
+                        },
+                    }
+                },
+            };
+        }
+        if keys[keys.len()-1].len() == 0 {
+            return Err(PWError::EmptyKey)
+        }
+
+        curr.insert(keys[keys.len()-1].to_string(), val);
+        Ok(())
     }
+}
+
+#[test]
+fn insert_test() {
+    let mut c = Config::new();
+
+    match c.set("this.is.a.test", Value::Integer(12345)) {
+        Ok(_) => {},
+        Err(e) => panic!("{}", e)
+    }
+
+    assert_eq!(Some(12345), c.value_int("this.is.a.test"));
+    match c.set("another..test", Value::Boolean(false)) {
+        Ok(_) => panic!("That's not supposed to happen!"),
+        Err(PWError::EmptyKey) => {},
+        _ => unreachable!()
+    }
+
+    match c.set("this.is.a.test.too", Value::Integer(12345)) {
+        Ok(_) => {},
+        Err(e) => panic!("{}", e),
+    }
+
+    assert_eq!(Some(12345), c.value_int("this.is.a.test.too"));
 }
