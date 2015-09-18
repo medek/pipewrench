@@ -4,19 +4,24 @@ use sdl2::VideoSubsystem;
 use result::*;
 use std::path::Path;
 use std::fs::File;
+use std::rc::Rc;
 
 extern crate image;
 
 pub struct Window {
-    display: SDL2Facade,
+    display: Rc<SDL2Facade>,
 }
 
 impl Window {
     pub fn new(vid: &VideoSubsystem, title: &str, width: u32, height: u32) -> PWResult<Window> {
         let display = try!(vid.window(title, width, height).build_glium());
         Ok(Window {
-            display: display
+            display: Rc::new(display)
         })
+    }
+
+    pub fn display(&self) -> Rc<SDL2Facade> {
+        self.display.clone()
     }
 
     pub fn draw(&self) -> Frame {
