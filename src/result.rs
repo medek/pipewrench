@@ -4,6 +4,7 @@ use sdl2::ErrorMessage;
 use std::error::Error;
 use glium::GliumCreationError;
 use toml::ParserError;
+use std::ops::Deref;
 
 #[derive(Debug)]
 pub enum PWError {
@@ -13,6 +14,8 @@ pub enum PWError {
     GenericError(String),
     TomlParseError(Vec<ParserError>),
     EmptyKey,
+    StorageOccupied(String),
+    Error(Box<Error>)
 }
 
 pub type PWResult<T> = Result<T, PWError>;
@@ -42,6 +45,12 @@ impl Display for PWError {
             },
             PWError::EmptyKey => {
                 fmt.write_str("EmptyKey in Config::Set")
+            },
+            PWError::StorageOccupied(ref s) => {
+                fmt.write_fmt(format_args!("Storage at \"{}\" occupied", s))
+            },
+            PWError::Error(ref e) => {
+                fmt.write_str(e.description())
             }
         }
     }
@@ -55,7 +64,9 @@ impl Error for PWError {
             PWError::ImageError(ref e) => e.description(),
             PWError::GenericError(ref s) => &s,
             PWError::TomlParseError(_) => "TomlParseError",
-            PWError::EmptyKey => "EmptyKey"
+            PWError::EmptyKey => "EmptyKey",
+            PWError::StorageOccupied(ref s) => &s,
+            PWError::Error(ref e) => e.description()
         }
     }
 
@@ -65,6 +76,7 @@ impl Error for PWError {
             PWError::IOError(ref e) => Some(e),
             PWError::ImageError(ref e) => Some(e),
             PWError::GenericError(_) => None,
+            PWError::Error(ref e) => Some(e.deref()),
             _ => None
         }
     }
@@ -94,5 +106,11 @@ impl From<GliumCreationError<ErrorMessage>> for PWError {
             GliumCreationError::BackendCreationError(er) => PWError::SDLError(er),
             GliumCreationError::IncompatibleOpenGl(s) => PWError::GenericError(s)
         }
+    }
+}
+
+impl From<Box<Error>> for PWError {
+    fn from(err: Box<Error>) -> PWError {
+        PWError::Error(err)
     }
 }

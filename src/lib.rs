@@ -10,6 +10,7 @@ mod macros;
 mod result;
 mod window;
 mod input;
+mod storage;
 
 pub mod config;
 pub mod collision;
@@ -17,3 +18,4 @@ pub mod collision;
 pub use result::*;
 pub use window::*;
 pub use input::*;
+pub use storage::*;
