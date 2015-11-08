@@ -33,7 +33,7 @@ fn main() {
             .add_binding(config.keybinding("keybind.Forward", BindingState::Held), Command::Forward)
             .add_binding(config.keybinding("keybind.Left", BindingState::Held), Command::Left)
             .add_binding(config.keybinding("keybind.Right", BindingState::Held), Command::Right)
-            .add_binding(config.keybinding("keybind.Left", BindingState::Held), Command::Back)
+            .add_binding(config.keybinding("keybind.Back", BindingState::Held), Command::Back)
             .add_binding(config.keybinding("keybind.Fire", BindingState::Pressed), Command::Fire);
 
     println!("{}", Circle::<f32>{radius: 6.0}.line_intersect(&Pnt2::<f32>::new(0.0,0.0), &Pnt2::<f32>::new(-10.0, 2.0), &Pnt2::<f32>::new(10.0, 2.0)));
