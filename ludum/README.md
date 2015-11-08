@@ -4,11 +4,11 @@ We are going to use Pipewrech in a Ludumdare event to put the library through
 its paces. The Ludumdare will be taking place over the weekend of december 11th
 
 - What do we have so far.
-    * Window Creation
-    * Keyboard binding and translation
-	* A way for having configuration files
-	* Generic Storage
-	* NOTE: [Andre|Gavin] Implement simple text file loading and saving
+    * ✓ Window Creation
+    * ✓ Keyboard binding and translation
+	* ✓ A way for having configuration files
+	* ✓ Generic Storage
+	* ✓ NOTE: [Andre|Gavin] Implement simple text file loading and saving
 
 
 - What do we need to add. This will represent v0.6 release
