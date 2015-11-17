@@ -4,12 +4,12 @@ use super::{Intersect, Intersection};
 
 #[derive(Debug,Clone)]
 pub struct AABB2<T: Base> {
-    pub tl: [T;2],
-    pub br: [T;2]
+    pub tl: Pnt2<T>,
+    pub br: Pnt2<T>
 }
 
 impl<T> AABB2<T> where T: Base {
-    pub fn new(tl: [T;2], br: [T;2]) -> AABB2<T> {
+    pub fn new(tl: Pnt2<T>, br: Pnt2<T>) -> AABB2<T> {
         AABB2 {
             tl: tl,
             br: br
@@ -19,10 +19,23 @@ impl<T> AABB2<T> where T: Base {
 
 impl<S> Intersect<Pnt2<S>, S> for AABB2<S> where S: Base {
     fn intersection(&self, other: &Pnt2<S>) -> Intersection<S> {
-        if other.x > self.tl[0] && other.x < self.br[0]
-        && other.y < self.tl[1] && other.y > self.br[1] {
+        if self.contains(other) {
             return Intersection::Inside
         }
+        else if self.intersects(other) {
+            return Intersection::Intersects(other.clone(), None)
+        }
+
         Intersection::Outside
+    }
+
+    fn intersects(&self, other: &Pnt2<S>) -> bool {
+        other.x == self.tl.x || other.y == self.tl.y ||
+        other.x == self.br.x || other.y == self.br.y
+    }
+
+    fn contains(&self, other: &Pnt2<S>) -> bool {
+        other.x > self.tl.x && other.x < self.br.x
+        && other.y < self.tl.y && other.y > self.br.y
     }
 }

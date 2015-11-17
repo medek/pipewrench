@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use super::super::Thingie as SpacialKey;
-use super::{AABB2, Intersect, Intersection};
+use super::{AABB2, Intersect, Intersection, Circle};
 use nalgebra::Pnt2;
 
 pub trait SpacialIndex {
@@ -29,13 +29,13 @@ impl<S, T> QuadTree<S, T> where T: SpacialIndex + Sized, S: SpacialKey {
         let min = qt.volume.tl;
         let max = qt.volume.br;
 
-        let (hw, hh) = (min[0]/S::from(2.0).unwrap(), max[1]/S::from(2.0).unwrap());
+        let (hw, hh) = (min.x/S::from(2.0).unwrap(), max.y/S::from(2.0).unwrap());
         qt.children = Some(
             [
-                Box::new(QuadTree::<S,T>::with_capacity(AABB2::<S>::new([min[0], min[1]], [hw, hh]), qt.capacity)),
-                Box::new(QuadTree::<S,T>::with_capacity(AABB2::<S>::new([min[0] + hw, min[1]], [max[0], hh]), qt.capacity)),
-                Box::new(QuadTree::<S,T>::with_capacity(AABB2::<S>::new([min[0] + hw, min[1] + hh], [max[0], max[1]]), qt.capacity)),
-                Box::new(QuadTree::<S,T>::with_capacity(AABB2::<S>::new([min[0], min[1] + hh], [hw, max[1]]), qt.capacity)),
+                Box::new(QuadTree::<S,T>::with_capacity(AABB2::<S>::new(Pnt2::new(min.x, min.y), Pnt2::new(hw, hh)), qt.capacity)),
+                Box::new(QuadTree::<S,T>::with_capacity(AABB2::<S>::new(Pnt2::new(min.x + hw, min.y), Pnt2::new(max.x, hh)), qt.capacity)),
+                Box::new(QuadTree::<S,T>::with_capacity(AABB2::<S>::new(Pnt2::new(min.x + hw, min.y + hh), Pnt2::new(max.x, max.y)), qt.capacity)),
+                Box::new(QuadTree::<S,T>::with_capacity(AABB2::<S>::new(Pnt2::new(min.x, min.y + hh), Pnt2::new(hw, max.y)), qt.capacity)),
             ]
         );
 
@@ -46,14 +46,14 @@ impl<S, T> QuadTree<S, T> where T: SpacialIndex + Sized, S: SpacialKey {
     }
 
     pub fn insert(&mut self, obj: &Rc<T>) -> bool {
-        if self.bucket.len() == self.capacity {
-            Self::subdivide(self);
-        }
-
         let pos = obj.get_position();
 
         if self.volume.intersection(&pos) == Intersection::Outside {
             return false
+        }
+
+        if self.bucket.len() == self.capacity {
+            Self::subdivide(self);
         }
 
         match self.children {
@@ -69,5 +69,9 @@ impl<S, T> QuadTree<S, T> where T: SpacialIndex + Sized, S: SpacialKey {
         }
 
         false
+    }
+
+    pub fn get_in_radius<'a>(&'a self, at: &Circle<S>) -> Vec<&'a Rc<T>> {
+        unimplemented!()
     }
 }

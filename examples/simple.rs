@@ -7,8 +7,6 @@ extern crate nalgebra as na;
 use sdl2::event::Event;
 use pipewrench::{Window, Input, BindingState, Keycode};
 use pipewrench::config::Config;
-use pipewrench::collision::{Circle, Intersection};
-use na::Pnt2;
 use glium::Surface;
 #[derive(Debug,Clone)]
 enum Command {
@@ -36,7 +34,6 @@ fn main() {
             .add_binding(config.keybinding("keybind.Back", BindingState::Held), Command::Back)
             .add_binding(config.keybinding("keybind.Fire", BindingState::Pressed), Command::Fire);
 
-    println!("{}", Circle::<f32>{radius: 6.0}.line_intersect(&Pnt2::<f32>::new(0.0,0.0), &Pnt2::<f32>::new(-10.0, 2.0), &Pnt2::<f32>::new(10.0, 2.0)));
     while running {
         let mut target = win.draw();
         target.clear_color(0.2, 0.26666, 0.33333, 1.0);

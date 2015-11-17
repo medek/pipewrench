@@ -20,9 +20,12 @@ pub use input::*;
 pub use storage::*;
 
 pub trait Thingie: //TODO: Rename this to something not stupid
-    num::Float
+    nalgebra::BaseNum
+    + num::Float
     + std::fmt::Display
+    + std::fmt::Debug
     + PartialOrd
+    + PartialEq
     + std::ops::Add<Self, Output=Self>
     + std::ops::Sub<Self, Output=Self>
     + std::ops::Mul<Self, Output=Self>
