@@ -33,16 +33,13 @@ impl<S> Intersect<Line<S>, S> for Line<S> where S: Base {
 
         if unum == S::zero() && denom == S::zero() {
             let t0 = (other.a - self.a).dot(&r) / r.dot(&r);
-            let t1 = (other.a + s - self.a).dot(&r) / r.dot(&r);
+            let t1 = t0 + s.dot(&r) / r.dot(&r);
             //do they overlap
-            // s and r go in opposite directions so it's t1 -> t0
-
+            // s and r go in opposite directions so s dot r < 0 it's t1 -> t0
             if s.dot(&r) < S::zero() && t1 <= S::one() && S::zero() <= t0 {
-                //TODO: fix
-                return Intersection::Overlap(other.a.clone(), self.b.clone())
+                return Intersection::Overlap(self.a + (r * t1), self.a + (r * t0))
             } else if t0 <= S::one() && S::zero() <= t1 {
-                //TODO: fix
-                return Intersection::Overlap(other.a.clone(), self.b.clone())
+                return Intersection::Overlap(self.a + (r * t0), self.a + (r * t1))
             }
 
             return Intersection::Outside
@@ -126,11 +123,16 @@ fn line_intersection() {
     l2 = Line::new(Pnt2::new(2.0, 2.0), Pnt2::new(7.0, 7.0));
 
     //collinear, overlap
-    assert_eq!(l1.intersection(&l2), Intersection::Overlap(l2.a.clone(), l1.b.clone()));
+    assert_eq!(l1.intersection(&l2), Intersection::Overlap(l2.a.clone(), l2.b.clone()));
     l1 = Line::new(Pnt2::new(0.0,0.0), Pnt2::new(5.0, 5.0));
     l2 = Line::new(Pnt2::new(7.0, 7.0), Pnt2::new(10.0, 10.0));
 
     //collinear, no overlap
     assert_eq!(l1.intersection(&l2), Intersection::Outside);
+
+    l1.b.x = 15.0;
+    l1.b.y = 15.0;
+    //it is right but there's stupid floating point mess
+    assert_eq!(l1.intersection(&l2), Intersection::Overlap(Pnt2 {x: 7.0, y: 7.0 }, Pnt2 {x: 10.000000000000002, y: 10.000000000000002}));
 }
 
