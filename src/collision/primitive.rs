@@ -113,7 +113,6 @@ impl<S> Intersect<Line<S>, S> for Circle<S> where S: Base {
 
             let t0 = (-b - dis)/(two * a);
             let t1 = (-b + dis)/(two * a);
-            println!("zero\t{}, {}", t0, t1);
             return Intersection::Intersects(other.a + (d * t0), None)
         }
         else {
@@ -122,7 +121,6 @@ impl<S> Intersect<Line<S>, S> for Circle<S> where S: Base {
             let t0 = (-b - dis)/(two * a);
             let t1 = (-b + dis)/(two * a);
 
-            println!(">zero\t{}, {}", t0, t1);
             if t0 < S::zero() && t1 <= S::one() { //A inside circle
                 return Intersection::Intersects(other.a + (d * t1), None)
             }
