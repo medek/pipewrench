@@ -65,7 +65,7 @@ impl<T> Input<T> where T: Sized + Clone {
             self.command_buffer.push(command.unwrap().clone());
         }
 
-        for key in (&self.keys - &self.old_keys) {
+        for key in &self.keys - &self.old_keys {
             let command = self.binding.get(&Binding::Key(BindingState::Pressed, key.clone()));
             if command.is_none() { continue }
 
