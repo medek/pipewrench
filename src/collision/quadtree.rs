@@ -4,7 +4,7 @@ use super::{AABB2, Intersect, Intersection, Circle};
 use nalgebra::Pnt2;
 
 pub trait SpacialIndex {
-    fn get_position<T: SpacialKey> (&self) -> Pnt2<T>;
+    fn get_position<T: SpacialKey>(&self) -> Pnt2<T>;
 }
 
 pub struct QuadTree<S, T> where T: SpacialIndex + Sized, S: SpacialKey {
@@ -71,7 +71,25 @@ impl<S, T> QuadTree<S, T> where T: SpacialIndex + Sized, S: SpacialKey {
         false
     }
 
-    pub fn get_in_radius<'a>(&'a self, at: &Circle<S>) -> Vec<&'a Rc<T>> {
-        unimplemented!()
+    pub fn get_in_radius(&self, at: &Circle<S>) -> Option<Vec<Rc<T>>> {
+        match at.intersection(&self.volume) {
+            Intersection::Outside => return None,
+            _ => {}
+        }
+        let mut ret:Vec<Rc<T>> = Vec::new();
+        if let Some(ref c) = self.children {
+            for quad in c.into_iter() {
+                if let Some(items) = quad.get_in_radius(at) {
+                    ret.extend_from_slice(&items[..]);
+                }
+            }
+        }
+        else {
+            for x in &self.bucket {
+                ret.push(x.clone())
+            }
+        }
+
+        return Some(ret);
     }
 }

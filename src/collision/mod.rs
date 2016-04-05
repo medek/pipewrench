@@ -1,10 +1,8 @@
-mod volume;
 mod quadtree;
 mod primitive;
 
 use nalgebra::{Pnt2};
 use super::Thingie;
-pub use self::volume::*;
 pub use self::quadtree::*;
 pub use self::primitive::*;
 
@@ -18,9 +16,11 @@ pub trait Intersect<T, S> where S: Thingie {
 pub enum Intersection<S> where S: Thingie {
     Outside,
     Inside,
+    InverseContain,
     Parallel,
     Overlap(Pnt2<S>, Pnt2<S>),
-    Intersects(Pnt2<S>, Option<Pnt2<S>>)
+    Intersects(Pnt2<S>, Option<Pnt2<S>>),
+    IntersectsN(Vec<Pnt2<S>>)
 }
 
 impl<S> Intersection<S> where S: Thingie {

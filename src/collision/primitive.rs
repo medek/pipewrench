@@ -1,16 +1,24 @@
 use Thingie as Base;
-use nalgebra::{Pnt2, Vec2, Cross, Dot, POrd};
+use nalgebra::{Pnt2, Vec2, Cross, Dot};
 use super::{Intersect, Intersection};
 
+#[derive(Debug,Clone)]
 pub struct Circle<S: Base> {
     pub pos: Pnt2<S>,
     pub radius: S
 }
 
 ///Lines go from a to b
+#[derive(Debug,Clone)]
 pub struct Line<S: Base> {
     pub a: Pnt2<S>,
     pub b: Pnt2<S>
+}
+
+#[derive(Debug,Clone)]
+pub struct AABB2<T: Base> {
+    pub tl: Pnt2<T>,
+    pub br: Pnt2<T>
 }
 
 impl<S> Line<S> where S: Base {
@@ -28,6 +36,38 @@ impl<S> Circle<S> where S: Base {
             pos: pos,
             radius: radius
         }
+    }
+}
+
+impl<S> AABB2<S> where S: Base {
+    pub fn new(tl: Pnt2<S>, br: Pnt2<S>) -> AABB2<S> {
+        AABB2 {
+            tl: tl,
+            br: br
+        }
+    }
+}
+
+impl<S> Intersect<Pnt2<S>, S> for AABB2<S> where S: Base {
+    fn intersection(&self, other: &Pnt2<S>) -> Intersection<S> {
+        if self.contains(other) {
+            return Intersection::Inside
+        }
+        else if self.intersects(other) {
+            return Intersection::Intersects(other.clone(), None)
+        }
+
+        Intersection::Outside
+    }
+
+    fn intersects(&self, other: &Pnt2<S>) -> bool {
+        other.x == self.tl.x || other.y == self.tl.y ||
+        other.x == self.br.x || other.y == self.br.y
+    }
+
+    fn contains(&self, other: &Pnt2<S>) -> bool {
+        other.x > self.tl.x && other.x < self.br.x
+        && other.y < self.tl.y && other.y > self.br.y
     }
 }
 
@@ -88,10 +128,24 @@ impl<S> Intersect<Line<S>, S> for Line<S> where S: Base {
     }
 }
 
+impl<S> Intersect<Circle<S>, S> for Line<S> where S: Base {
+    fn intersection(&self, other: &Circle<S>) -> Intersection<S> {
+        other.intersection(self)
+    }
+
+    fn intersects(&self, other: &Circle<S>) -> bool {
+        other.intersects(self)
+    }
+
+    fn contains(&self, other: &Circle<S>) -> bool {
+        !other.contains(self)
+    }
+}
+
 impl<S> Intersect<Line<S>, S> for Circle<S> where S: Base {
     fn intersection(&self, other: &Line<S>) -> Intersection<S> {
         let two = S::from(2.0).unwrap();
-        let d = (other.b - other.a);
+        let d = other.b - other.a;
 
         if d.x == S::zero() && d.y == S::zero() { //line has zero length
             //I could be an asshole and let it pretend it's a tangent and return NaNs,
@@ -99,7 +153,7 @@ impl<S> Intersect<Line<S>, S> for Circle<S> where S: Base {
             return self.intersection(&other.a)
         }
 
-        let f = (other.a - self.pos);
+        let f = other.a - self.pos;
         let a = d.dot(&d);
         let b = S::from(2.0).unwrap()*f.dot(&d);
         let c = f.dot(&f) - self.radius.powf(two);
@@ -112,7 +166,6 @@ impl<S> Intersect<Line<S>, S> for Circle<S> where S: Base {
             dis = dis.sqrt();
 
             let t0 = (-b - dis)/(two * a);
-            let t1 = (-b + dis)/(two * a);
             return Intersection::Intersects(other.a + (d * t0), None)
         }
         else {
@@ -174,6 +227,94 @@ impl<S> Intersect<Pnt2<S>, S> for Circle<S> where S: Base {
     }
 
     fn contains(&self, other: &Pnt2<S>) -> bool {
+        match self.intersection(other) {
+            Intersection::Inside => true,
+            _ => false
+        }
+    }
+}
+
+impl<S> Intersect<AABB2<S>, S> for Circle<S> where S: Base {
+    fn intersection(&self, other: &AABB2<S>) -> Intersection<S> {
+        let mut l:Line<S> = Line::new(other.tl, other.br);
+        let mut p:Vec<Pnt2<S>> = Vec::new();
+        let mut outside = 0;
+
+        match self.intersection(&l) {
+            Intersection::Inside => return Intersection::Inside,
+            _ => {}
+        }
+
+        l = Line::new(other.tl, Pnt2::new(other.br.x, other.tl.y)); //top
+
+        match self.intersection(&l) {
+            Intersection::Intersects(a, b) => {
+                p.push(a);
+                if b.is_some() {
+                    p.push(b.unwrap());
+                }
+            },
+            Intersection::Outside => outside += 1,
+            _ => {}
+        }
+
+        l = Line::new(Pnt2::new(other.br.x, other.tl.y), other.br); //right
+
+        match self.intersection(&l) {
+            Intersection::Intersects(a, b) => {
+                p.push(a);
+                if b.is_some() {
+                    p.push(b.unwrap());
+                }
+            },
+            Intersection::Outside => outside += 1,
+            _ => {}
+        }
+
+        l = Line::new(other.br, Pnt2::new(other.tl.x, other.br.y)); //bottom
+
+        match self.intersection(&l) {
+            Intersection::Intersects(a, b) => {
+                p.push(a);
+                if b.is_some() {
+                    p.push(b.unwrap());
+                }
+            },
+            Intersection::Outside => outside += 1,
+            _ => {}
+        }
+
+        l = Line::new(Pnt2::new(other.tl.x, other.br.y), other.tl); //left
+
+        match self.intersection(&l) {
+            Intersection::Intersects(a, b) => {
+                p.push(a);
+                if b.is_some() {
+                    p.push(b.unwrap());
+                }
+            },
+            Intersection::Outside => outside += 1,
+            _ => {}
+        }
+
+        if outside == 4 {
+            if other.intersection(&self.pos) == Intersection::Inside {
+                return Intersection::InverseContain;
+            }
+            return Intersection::Outside;
+        }
+
+        Intersection::IntersectsN(p)
+    }
+
+    fn intersects(&self, other: &AABB2<S>) -> bool {
+        match self.intersection(other) {
+            Intersection::IntersectsN(_) => true,
+            _ => false
+        }
+    }
+
+    fn contains(&self, other: &AABB2<S>) -> bool {
         match self.intersection(other) {
             Intersection::Inside => true,
             _ => false
@@ -277,5 +418,37 @@ fn circle_line_intersection() {
 
     //zero length line inside
     assert_eq!(circle.intersection(&line), Intersection::Inside);
+}
+
+#[test]
+fn circle_aabb2_intersection() {
+    let mut circle = Circle::new(Pnt2::new(0.0, 0.0), 5.0);
+    let mut aabb = AABB2::new(Pnt2::new(-5.0, 5.0), Pnt2::new(5.0, -5.0));
+
+    // four faces
+    assert_eq!(circle.intersection(&aabb),
+               Intersection::IntersectsN(vec![Pnt2::new(0.0, 5.0),
+                                              Pnt2::new(5.0, 0.0),
+                                              Pnt2::new(0.0, -5.0),
+                                              Pnt2::new(-5.0, 0.0)
+                                             ]));
+
+    // four corners
+    circle.radius = 7.0710678118654755; //thanks pythagoras
+
+    assert_eq!(circle.intersection(&aabb),
+               Intersection::IntersectsN(vec![Pnt2::new(5.0, 5.0),
+                                              Pnt2::new(5.0, -5.0),
+                                              Pnt2::new(-5.0, -5.0),
+                                              Pnt2::new(-5.0, 5.0)
+                                             ]));
+    //inside
+    circle.radius = 10.0;
+    assert_eq!(circle.intersection(&aabb), Intersection::Inside);
+
+    //circle inside aabb
+    circle.radius = 3.0;
+
+    assert_eq!(circle.intersection(&aabb), Intersection::InverseContain);
 }
 

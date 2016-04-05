@@ -15,3 +15,7 @@ nalgebra = "0.3.0"
 version = "0.10"
 features = ["image", "nalgebra"]
 default-features = false
+
+[features]
+default = ["collision"]
+collision = []

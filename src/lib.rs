@@ -12,6 +12,7 @@ mod window;
 mod input;
 mod storage;
 pub mod config;
+#[cfg(feature = "collision")]
 pub mod collision;
 
 pub use result::*;
