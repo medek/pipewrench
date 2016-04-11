@@ -2,20 +2,20 @@ use Thingie as Base;
 use nalgebra::{Pnt2, Vec2, Cross, Dot};
 use super::{Intersect, Intersection};
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct Circle<S: Base> {
     pub pos: Pnt2<S>,
     pub radius: S
 }
 
 ///Lines go from a to b
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct Line<S: Base> {
     pub a: Pnt2<S>,
     pub b: Pnt2<S>
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct AABB2<T: Base> {
     pub tl: Pnt2<T>,
     pub br: Pnt2<T>
