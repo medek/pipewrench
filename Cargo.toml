@@ -17,5 +17,6 @@ features = ["image", "nalgebra"]
 default-features = false
 
 [features]
-default = ["collision"]
+default = ["collision", "render"]
 collision = []
+render = []

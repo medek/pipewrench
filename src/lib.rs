@@ -1,5 +1,7 @@
+#[cfg(feature = "render")]
 #[macro_use]
 extern crate glium;
+#[cfg(feature = "render")]
 extern crate glium_sdl2;
 extern crate sdl2;
 extern crate toml;
@@ -14,6 +16,8 @@ mod storage;
 pub mod config;
 #[cfg(feature = "collision")]
 pub mod collision;
+#[cfg(feature = "render")]
+pub mod render;
 
 pub use result::*;
 pub use window::*;
