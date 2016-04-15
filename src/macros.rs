@@ -39,3 +39,18 @@ macro_rules! config_bool {
         )
 }
 
+macro_rules! matches {
+    ($expression:expr, $($pattern:tt)+) => {
+        _tt_as_expr_hack! {
+            match $expression {
+                $($pattern)+ => true,
+                _ => false
+            }
+        }
+    }
+}
+
+macro_rules! _tt_as_expr_hack {
+    ($value:expr) => ($value)
+}
+

@@ -1,3 +1,5 @@
+#[cfg(feature = "render")]
+use super::super::render::prelude::*;
 use std::rc::Rc;
 use super::super::Thingie as SpacialKey;
 use super::{AABB2, Intersect, Intersection, Circle};
@@ -124,6 +126,10 @@ impl<'a, S, T> QuadTree<S, T> where T: SpacialIndex + Sized, S: SpacialKey {
     }
 
 }
+
+//#[cfg(feature = "render")]
+//impl<F, T> DebugRender<f32, F> for QuadTree<f32,T> where F: Facade, T: SpacialIndex + Sized {
+//}
 
 #[cfg(test)]
 #[derive(Debug, PartialEq, Clone)]

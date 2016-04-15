@@ -19,6 +19,7 @@ pub enum PWError {
     Render(String, Option<Box<Error>>),
     IndexCreationError(::glium::index::BufferCreationError),
     VertexCreationError(::glium::vertex::BufferCreationError),
+    TextureCreationError(::glium::texture::TextureCreationError),
     DrawError(::glium::DrawError),
 }
 
@@ -73,6 +74,9 @@ impl Display for PWError {
             PWError::DrawError(ref e) => {
                 fmt.write_fmt(format_args!("{:?}", e))
             }
+            PWError::TextureCreationError(ref e) => {
+                fmt.write_str(e.description())
+            }
         }
     }
 }
@@ -104,6 +108,9 @@ impl Error for PWError {
             },
             PWError::DrawError(_) => {
                 "DrawError"
+            },
+            PWError::TextureCreationError(ref e) => {
+                e.description()
             }
         }
     }
@@ -115,6 +122,7 @@ impl Error for PWError {
             PWError::ImageError(ref e) => Some(e),
             PWError::GenericError(_) => None,
             PWError::Error(ref e) => Some(e.deref()),
+            PWError::TextureCreationError(ref e) => Some(e),
             PWError::Render(_, ref e) => {
                 match e {
                     &Some(ref ee) => Some(ee.deref()),
@@ -174,6 +182,12 @@ impl From<GliumCreationError<ErrorMessage>> for PWError {
 impl From<::glium::program::ProgramChooserCreationError> for PWError {
     fn from(err: ::glium::program::ProgramChooserCreationError) -> PWError {
         PWError::Render(err.description().to_string(), Some(Box::new(err)))
+    }
+}
+
+impl From<::glium::texture::TextureCreationError> for PWError {
+    fn from(err: ::glium::texture::TextureCreationError) -> PWError {
+        PWError::TextureCreationError(err)
     }
 }
 

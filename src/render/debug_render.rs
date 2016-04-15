@@ -1,20 +1,8 @@
 use super::super::result::PWResult;
 use super::super::Thingie as Base;
 use super::super::collision::Line;
-pub mod debug_render_prelude {
-    pub use nalgebra::{Mat4, Eye};
-    pub use glium_sdl2::SDL2Facade;
-    pub use glium::backend::Facade;
-    pub use glium::{Program, Frame, Surface};
-    pub use glium::index::{IndexBuffer, IndicesSource, NoIndices, PrimitiveType};
-    pub use glium::vertex::VertexBuffer;
-    pub use glium::draw_parameters::{DrawParameters, DepthClamp, Depth, DepthTest,
-                                 Blend, BlendingFunction,
-                                 PolygonMode};
-    pub use super::{DebugRender, DebugVertex, DebugRenderer};
-}
 
-use self::debug_render_prelude::*;
+use super::prelude::*;
 
 pub trait DebugRender<S, F> where S: Base, F: Facade {
     /// program uniforms are matrix (mat4)
@@ -47,7 +35,6 @@ const FRAG_140:&'static str = include_str!("../../shaders/140.frag");
 
 impl<'a, S> DebugRenderer<'a, S> where S: Base {
     pub fn new(facade: &SDL2Facade) -> PWResult<DebugRenderer<'a, S>> {
-        println!("{:?}", ::glium::get_supported_glsl_version(&::glium::Version(::glium::Api::Gl, 3, 0)));
         let prog = try!(program!(facade,
             140 => {
                 vertex: VERT_140,
@@ -95,13 +82,13 @@ impl<'a, S> DebugRenderer<'a, S> where S: Base {
 impl<F> DebugRender<f32,F> for Line<f32> where F: Facade {
     fn render(&self, facade: &F, surface: &mut Frame, matrix: Mat4<f32>, program: &Program, draw_parameters: &DrawParameters) -> PWResult<()> {
         let verts = try!(VertexBuffer::new(facade, &[
-            DebugVertex { position: self.a.as_array().clone(), color:  [1.0, 0.0, 0.0, 1.0]},
-            DebugVertex { position: self.b.as_array().clone(), color: [1.0, 0.0, 0.0, 1.0]}
+            DebugVertex { position: self.a.as_ref().clone(), color:  [1.0, 0.0, 0.0, 1.0]},
+            DebugVertex { position: self.b.as_ref().clone(), color: [1.0, 0.0, 0.0, 1.0]}
         ]));
 
         let indices = try!(IndexBuffer::new(facade, PrimitiveType::LinesList, &[0u32, 1u32]));
         let uniforms = uniform! {
-            matrix: matrix
+            matrix: matrix.as_ref().clone()
         };
         try!(surface.draw(&verts, &indices, program, &uniforms, draw_parameters));
         Ok(())

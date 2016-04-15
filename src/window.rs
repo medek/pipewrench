@@ -1,6 +1,8 @@
 use glium_sdl2::{DisplayBuild, SDL2Facade};
 use glium::Frame;
+use glium::texture::RawImage2d;
 use sdl2::VideoSubsystem;
+use image::RgbaImage;
 use result::*;
 use std::path::Path;
 use std::fs::File;
@@ -28,11 +30,12 @@ impl Window {
         self.display.draw()
     }
 
-    pub fn screenshot(&self, file: &Path) -> PWResult<()> {
-        let image:image::DynamicImage = self.display.read_front_buffer();
-        let mut output = try!(File::create(file));
-
-        try!(image.save(&mut output, image::ImageFormat::PNG));
-        Ok(())
+    pub fn screenshoti<'a>(&self, file: &Path) -> PWResult<()> {
+        let image:RawImage2d<'a, u8> = self.display.read_front_buffer();
+        if let Some(image) = RgbaImage::from_raw(image.width, image.height, image.data.as_ref().to_vec()) {
+            try!(image.save(file));
+            return Ok(());
+        }
+        return Err(PWError::GenericError("RgbaImage couldn't read raw pixels...".to_string()))
     }
 }

@@ -7,6 +7,7 @@ extern crate sdl2;
 extern crate toml;
 extern crate nalgebra;
 extern crate num;
+extern crate image;
 #[macro_use]
 mod macros;
 mod result;
