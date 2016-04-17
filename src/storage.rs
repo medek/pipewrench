@@ -21,10 +21,10 @@ impl<T> Storage<T> where T: Sized {
     }
 
     ///! consume data and return a reference counted version of it
-    pub fn add(&mut self, path: &String, data: T) -> PWResult<Rc<T>> {
-        match self.data.entry(path.clone()) {
+    pub fn add(&mut self, path: &str, data: T) -> PWResult<Rc<T>> {
+        match self.data.entry(path.to_string()) {
             Entry::Occupied(_) => {
-                Err(PWError::StorageOccupied(path.clone()))
+                Err(PWError::StorageOccupied(path.to_string()))
             },
             Entry::Vacant(slot) => {
                 let new = Rc::new(data);
@@ -34,8 +34,8 @@ impl<T> Storage<T> where T: Sized {
         }
     }
 
-    pub fn load(&mut self, path: &String) -> PWResult<Rc<T>> {
-        match self.data.entry(path.clone()) {
+    pub fn load(&mut self, path: &str) -> PWResult<Rc<T>> {
+        match self.data.entry(path.to_string()) {
             Entry::Occupied(slot) => {
                 Ok(slot.get().clone())
             }
@@ -48,11 +48,11 @@ impl<T> Storage<T> where T: Sized {
         }
     }
 
-    pub fn has(&self, path: &String) -> bool {
+    pub fn has(&self, path: &str) -> bool {
         self.data.contains_key(path)
     }
 
-    pub fn get(&self, path: &String) -> Option<Rc<T>> {
+    pub fn get(&self, path: &str) -> Option<Rc<T>> {
         if self.has(path) {
             Some(self.data.get(path).unwrap().clone())
         }
@@ -61,7 +61,7 @@ impl<T> Storage<T> where T: Sized {
         }
     }
 
-    pub fn drop(&mut self, path: &String) -> Option<Rc<T>> {
+    pub fn drop(&mut self, path: &str) -> Option<Rc<T>> {
         self.data.remove(path)
     }
 

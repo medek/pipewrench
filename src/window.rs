@@ -5,7 +5,6 @@ use sdl2::VideoSubsystem;
 use image::RgbaImage;
 use result::*;
 use std::path::Path;
-use std::fs::File;
 use std::rc::Rc;
 
 extern crate image;

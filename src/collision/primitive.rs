@@ -46,6 +46,59 @@ impl<S> AABB2<S> where S: Base {
             br: br
         }
     }
+
+    pub fn new_centered(c: Pnt2<S>, width: S, height: S) -> AABB2<S> {
+        let two = S::from(2.0).unwrap();
+        let hw = width / two;
+        let hh = height / two;
+
+        Self::new(Pnt2::new(c.x - hw, c.y + hh), Pnt2::new(c.x + hw, c.y - hh))
+    }
+
+    pub fn center(&self) -> Pnt2<S> {
+        let two = S::from(2.0).unwrap();
+        let hw = self.width() / two;
+        let hh = self.height() / two;
+        Pnt2::new(self.tl.x + hw, self.tl.y - hh)
+    }
+
+    pub fn corners(&self) -> [Pnt2<S>; 4] {
+        [
+            self.tl.clone(),
+            Pnt2::new(self.br.x, self.tl.y),
+            self.br.clone(),
+            Pnt2::new(self.tl.x, self.br.y)
+        ]
+    }
+
+    pub fn width(&self) -> S {
+        (self.br.x - self.tl.x).abs()
+    }
+
+    pub fn height(&self) -> S {
+        (self.tl.y - self.br.y).abs()
+    }
+
+    pub fn set_position(&mut self, pos: Pnt2<S>) {
+        println!("{:?}, {:?}", self.width(), self.height());
+        *self = Self::new_centered(pos, self.width(), self.height());
+    }
+
+    pub fn top(&self) -> Line<S> {
+        Line::new(self.tl.clone(), Pnt2::new(self.br.x, self.tl.y))
+    }
+
+    pub fn left(&self) -> Line<S> {
+        Line::new(Pnt2::new(self.tl.x, self.br.y), self.tl.clone())
+    }
+
+    pub fn right(&self) -> Line<S> {
+        Line::new(Pnt2::new(self.br.x, self.tl.y), self.br.clone())
+    }
+
+    pub fn bottom(&self) -> Line<S> {
+        Line::new(self.br.clone(), Pnt2::new(self.tl.x, self.br.y))
+    }
 }
 
 impl<S> Intersect<Pnt2<S>, S> for AABB2<S> where S: Base {
@@ -245,7 +298,7 @@ impl<S> Intersect<AABB2<S>, S> for Circle<S> where S: Base {
             _ => {}
         }
 
-        l = Line::new(other.tl, Pnt2::new(other.br.x, other.tl.y)); //top
+        l = other.top();
 
         match self.intersection(&l) {
             Intersection::Intersects(a, b) => {
@@ -258,7 +311,7 @@ impl<S> Intersect<AABB2<S>, S> for Circle<S> where S: Base {
             _ => {}
         }
 
-        l = Line::new(Pnt2::new(other.br.x, other.tl.y), other.br); //right
+        l = other.right();
 
         match self.intersection(&l) {
             Intersection::Intersects(a, b) => {
@@ -271,7 +324,7 @@ impl<S> Intersect<AABB2<S>, S> for Circle<S> where S: Base {
             _ => {}
         }
 
-        l = Line::new(other.br, Pnt2::new(other.tl.x, other.br.y)); //bottom
+        l = other.bottom();
 
         match self.intersection(&l) {
             Intersection::Intersects(a, b) => {
@@ -284,7 +337,7 @@ impl<S> Intersect<AABB2<S>, S> for Circle<S> where S: Base {
             _ => {}
         }
 
-        l = Line::new(Pnt2::new(other.tl.x, other.br.y), other.tl); //left
+        l = other.left();
 
         match self.intersection(&l) {
             Intersection::Intersects(a, b) => {
@@ -423,7 +476,7 @@ fn circle_line_intersection() {
 #[test]
 fn circle_aabb2_intersection() {
     let mut circle = Circle::new(Pnt2::new(0.0, 0.0), 5.0);
-    let mut aabb = AABB2::new(Pnt2::new(-5.0, 5.0), Pnt2::new(5.0, -5.0));
+    let aabb = AABB2::new(Pnt2::new(-5.0, 5.0), Pnt2::new(5.0, -5.0));
 
     // four faces
     assert_eq!(circle.intersection(&aabb),
@@ -450,5 +503,17 @@ fn circle_aabb2_intersection() {
     circle.radius = 3.0;
 
     assert_eq!(circle.intersection(&aabb), Intersection::InverseContain);
+}
+
+#[test]
+fn aabb_misc() {
+    let mut a = AABB2::new(Pnt2::new(0.0, 10.0), Pnt2::new(10.0, 0.0));
+
+    assert_eq!(a.width(), 10.0);
+    assert_eq!(a.height(), 10.0);
+
+    a.set_position(Pnt2::new(30.0, -20.0));
+    assert_eq!(a.width(), 10.0);
+    assert_eq!(a.height(), 10.0);
 }
 
