@@ -2,18 +2,46 @@
 name = "pipewrench"
 version = "0.1.0"
 authors = ["Gavin Massey <mdk@mystacktrace.org>"]
+[[example]]
+name = "simple"
+required-features = ["window", "config"]
 
 [dependencies]
-glium_sdl2="0.15"
-sdl2 = "0.30"
-image = "0.23.13"
-toml = "0.1.22"
-num = "0.1.27"
-cgmath = "0.18.0"
 thiserror = "1.0"
+
+[dependencies.toml]
+version = "0.1.22"
+optional = true
+
+[dependencies.cgmath]
+version = "0.18.0"
+optional = true
+
 [dependencies.glium]
 version = "0.18.0"
+optional = true
+
+[dependencies.glium_sdl2]
+version = "0.15"
+optional = true
+
+[dependencies.sdl2]
+version = "0.30"
+optional = true
+
+#procedural deps
+[dependencies.texture-synthesis]
+version = "0.8.0"
+optional = true
+
+[dependencies.noise]
+version = "0.7.0"
+optional = true
 
 [features]
-default = ["collision"]
-collision = []
+default = ["collision", "window"]
+window = ["sdl2", "glium_sdl2", "glium"]
+collision = ["cgmath"]
+config = ["toml"]
+procedural = ["texture-synthesis", "noise"]
+

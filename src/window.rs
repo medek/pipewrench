@@ -3,7 +3,6 @@ use glium::Frame;
 use sdl2::VideoSubsystem;
 use std::rc::Rc;
 
-extern crate image;
 #[derive(Debug, Error)]
 pub enum WindowError {
     #[error("SDL Error: {}", source)]
@@ -15,11 +14,6 @@ pub enum WindowError {
     IOError {
         #[from]
         source: std::io::Error
-    },
-    #[error("ImageError: {}", source)]
-    ImageError {
-        #[from]
-        source: image::ImageError,
     },
     #[error("Failure to create screenshot from raw buffer")]
     ScreenshotFailure
