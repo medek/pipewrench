@@ -1,19 +1,18 @@
 mod quadtree;
 mod primitive;
-
-use nalgebra::{Pnt2};
-use super::Thingie;
+use cgmath::Point2 as Pnt2;
+use cgmath::BaseFloat;
 pub use self::quadtree::*;
 pub use self::primitive::*;
 
-pub trait Intersect<T, S> where S: Thingie {
+pub trait Intersect<T, S> where S: BaseFloat {
     fn intersection(&self, other: &T) -> Intersection<S>;
     fn intersects(&self, other: &T) -> bool;
     fn contains(&self, other: &T) -> bool;
 }
 
 #[derive(Debug,Clone,PartialEq)]
-pub enum Intersection<S> where S: Thingie {
+pub enum Intersection<S> where S: BaseFloat {
     Outside,
     Inside,
     InverseContain,
@@ -23,7 +22,7 @@ pub enum Intersection<S> where S: Thingie {
     IntersectsN(Vec<Pnt2<S>>)
 }
 
-impl<S> Intersection<S> where S: Thingie {
+impl<S> Intersection<S> where S: BaseFloat {
     pub fn inside(&self) -> bool {
         match *self {
             Intersection::Inside => true,

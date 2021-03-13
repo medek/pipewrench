@@ -1,54 +1,57 @@
-use Thingie as Base;
-use nalgebra::{Pnt2, Vec2, Cross, Dot};
+use cgmath::BaseFloat;
+use cgmath::Point2 as Pnt2;
+use cgmath::Vector2 as Vec2;
+use super::super::cgmath_augment::*;
+
 use super::{Intersect, Intersection};
 
 #[derive(Debug,Clone,PartialEq)]
-pub struct Circle<S: Base> {
+pub struct Circle<S: BaseFloat> {
     pub pos: Pnt2<S>,
     pub radius: S
 }
 
 ///Lines go from a to b
 #[derive(Debug,Clone,PartialEq)]
-pub struct Line<S: Base> {
+pub struct Line<S: BaseFloat> {
     pub a: Pnt2<S>,
     pub b: Pnt2<S>
 }
 
 #[derive(Debug,Clone,PartialEq)]
-pub struct AABB2<T: Base> {
+pub struct AABB2<T: BaseFloat> {
     pub tl: Pnt2<T>,
     pub br: Pnt2<T>
 }
 
-impl<S> Line<S> where S: Base {
+impl<S> Line<S> where S: BaseFloat {
     pub fn new(a: Pnt2<S>, b: Pnt2<S>) -> Line<S> {
         Line {
-            a: a,
-            b: b
+            a,
+            b
         }
     }
 }
 
-impl<S> Circle<S> where S: Base {
+impl<S> Circle<S> where S: BaseFloat {
     pub fn new(pos: Pnt2<S>, radius: S) -> Circle<S> {
         Circle {
-            pos: pos,
-            radius: radius
+            pos,
+            radius
         }
     }
 }
 
-impl<S> AABB2<S> where S: Base {
+impl<S> AABB2<S> where S: BaseFloat {
     pub fn new(tl: Pnt2<S>, br: Pnt2<S>) -> AABB2<S> {
         AABB2 {
-            tl: tl,
-            br: br
+            tl,
+            br
         }
     }
 }
 
-impl<S> Intersect<Pnt2<S>, S> for AABB2<S> where S: Base {
+impl<S> Intersect<Pnt2<S>, S> for AABB2<S> where S: BaseFloat {
     fn intersection(&self, other: &Pnt2<S>) -> Intersection<S> {
         if self.contains(other) {
             return Intersection::Inside
@@ -71,21 +74,20 @@ impl<S> Intersect<Pnt2<S>, S> for AABB2<S> where S: Base {
     }
 }
 
-impl<S> Intersect<Line<S>, S> for Line<S> where S: Base {
+impl<S> Intersect<Line<S>, S> for Line<S> where S: BaseFloat {
     fn intersection(&self, other: &Line<S>) -> Intersection<S> {
         let r = Vec2::new(self.b.x - self.a.x, self.b.y - self.a.y);
         let s = Vec2::new(other.b.x - other.a.x, other.b.y - other.a.y);
 
-        //cross returns a Vec1... wtf?!
-        let unum = (other.a - self.a).cross(&r).x;
-        let denom = r.cross(&s).x;
+        let unum = (other.a - self.a).cross(&r);
+        let denom = r.cross(&s);
 
         if unum == S::zero() && denom == S::zero() {
             let t0 = (other.a - self.a).dot(&r) / r.dot(&r);
             let t1 = t0 + s.dot(&r) / r.dot(&r);
             //do they overlap
             // s and r go in opposite directions so s dot r < 0 it's t1 -> t0
-            if s.dot(&r) < S::zero() && t1 <= S::one() && S::zero() <= t0 {
+            if cgmath::dot(s, r) < S::zero() && t1 <= S::one() && S::zero() <= t0 {
                 return Intersection::Overlap(self.a + (r * t1), self.a + (r * t0))
             } else if t0 <= S::one() && S::zero() <= t1 {
                 return Intersection::Overlap(self.a + (r * t0), self.a + (r * t1))
@@ -100,7 +102,7 @@ impl<S> Intersect<Line<S>, S> for Line<S> where S: Base {
         }
 
         let u = unum / denom;
-        let t = (other.a - self.a).cross(&s).x / denom;
+        let t = (other.a - self.a).cross(&s) / denom;
 
         if t >= S::zero() && t <= S::one() && u >= S::zero() && u <= S::one() {
             return Intersection::Intersects(self.a + (r * t), None)
@@ -128,7 +130,7 @@ impl<S> Intersect<Line<S>, S> for Line<S> where S: Base {
     }
 }
 
-impl<S> Intersect<Circle<S>, S> for Line<S> where S: Base {
+impl<S> Intersect<Circle<S>, S> for Line<S> where S: BaseFloat {
     fn intersection(&self, other: &Circle<S>) -> Intersection<S> {
         other.intersection(self)
     }
@@ -142,7 +144,7 @@ impl<S> Intersect<Circle<S>, S> for Line<S> where S: Base {
     }
 }
 
-impl<S> Intersect<Line<S>, S> for Circle<S> where S: Base {
+impl<S> Intersect<Line<S>, S> for Circle<S> where S: BaseFloat {
     fn intersection(&self, other: &Line<S>) -> Intersection<S> {
         let two = S::from(2.0).unwrap();
         let d = other.b - other.a;
@@ -205,7 +207,7 @@ impl<S> Intersect<Line<S>, S> for Circle<S> where S: Base {
     }
 }
 
-impl<S> Intersect<Pnt2<S>, S> for Circle<S> where S: Base {
+impl<S> Intersect<Pnt2<S>, S> for Circle<S> where S: BaseFloat {
     fn intersection(&self, other: &Pnt2<S>) -> Intersection<S> {
         let d = *other - self.pos;
 
@@ -234,7 +236,7 @@ impl<S> Intersect<Pnt2<S>, S> for Circle<S> where S: Base {
     }
 }
 
-impl<S> Intersect<AABB2<S>, S> for Circle<S> where S: Base {
+impl<S> Intersect<AABB2<S>, S> for Circle<S> where S: BaseFloat {
     fn intersection(&self, other: &AABB2<S>) -> Intersection<S> {
         let mut l:Line<S> = Line::new(other.tl, other.br);
         let mut p:Vec<Pnt2<S>> = Vec::new();
@@ -397,7 +399,7 @@ fn circle_line_intersection() {
     assert_eq!(circle.intersection(&line), Intersection::Intersects(Pnt2 {x: -3.0, y: 1.0}, None));
 
 
-    line.a = circle.pos + (circle.radius/2.0);
+    line.a = circle.pos.add_scalar(circle.radius/2.0);
     line.b = circle.pos;
 
     //line completely inside

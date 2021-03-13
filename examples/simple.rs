@@ -2,7 +2,6 @@
 extern crate pipewrench;
 extern crate sdl2;
 extern crate glium;
-extern crate nalgebra as na;
 
 use sdl2::event::Event;
 use pipewrench::{Window, Input, BindingState, Keycode};

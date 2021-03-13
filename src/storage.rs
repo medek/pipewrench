@@ -2,10 +2,21 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::rc::Rc;
 use std::path::Path;
-use std::error::Error;
-use result::*;
 
-pub type LoaderFunction<T> = Fn(&Path) -> Result<T, Box<Error>>;
+pub trait SizedError: std::error::Error + Sized {}
+
+#[derive(Debug,Error)]
+pub enum StorageError {
+    #[error("Storage already has key named \"{0}\"")]
+    StorageOccupied(String),
+    #[error("Error: {source}")]
+    Error {
+        #[from]
+        source: Box<dyn std::error::Error>
+    }
+}
+
+pub type LoaderFunction<T>= dyn Fn(&Path) -> Result<T, Box<dyn std::error::Error>>;
 
 pub struct Storage<T> {
     data: HashMap<String, Rc<T>>,
@@ -16,15 +27,15 @@ impl<T> Storage<T> where T: Sized {
     pub fn new(loader: Box<LoaderFunction<T>>) -> Storage<T> {
         Storage {
             data: HashMap::new(),
-            loader: loader
+            loader
         }
     }
 
     ///! consume data and return a reference counted version of it
-    pub fn add(&mut self, path: &String, data: T) -> PWResult<Rc<T>> {
+    pub fn add(&mut self, path: &String, data: T) -> Result<Rc<T>, StorageError> {
         match self.data.entry(path.clone()) {
             Entry::Occupied(_) => {
-                Err(PWError::StorageOccupied(path.clone()))
+                Err(StorageError::StorageOccupied(path.clone()))
             },
             Entry::Vacant(slot) => {
                 let new = Rc::new(data);
@@ -34,13 +45,13 @@ impl<T> Storage<T> where T: Sized {
         }
     }
 
-    pub fn load(&mut self, path: &String) -> PWResult<Rc<T>> {
+    pub fn load(&mut self, path: &String) -> Result<Rc<T>, StorageError> {
         match self.data.entry(path.clone()) {
             Entry::Occupied(slot) => {
                 Ok(slot.get().clone())
             }
             Entry::Vacant(slot) => {
-                let data = try!((self.loader)(&Path::new(path)));
+                let data = (self.loader)(&Path::new(path))?;
                 let ret = Rc::new(data);
                 slot.insert(ret.clone());
                 Ok(ret)

@@ -1,5 +1,4 @@
 use toml::Parser;
-use result::*;
 use std::fs::{File, OpenOptions};
 use std::path::Path;
 use std::io::{Read, Write};
@@ -7,6 +6,19 @@ use input::{Binding, BindingState};
 use sdl2::keyboard::Keycode;
 use std::collections::btree_map::Entry;
 pub use toml::{Value, Table};
+
+#[derive(Debug, Error)]
+pub enum ConfigError {
+    #[error("Key is empty")]
+    EmptyKey,
+    #[error("Error parsing config file: {:?}", .0)]
+    TomlParseError(Vec<toml::ParserError>),
+    #[error("IOError: {source}")]
+    IOError {
+        #[from]
+        source: std::io::Error
+    }
+}
 
 ///! Toml backed config file
 #[derive(Debug)]
@@ -23,23 +35,23 @@ impl Config {
     }
 
     ///! Create config from a toml file
-    pub fn from_file(config: &str) -> PWResult<Config> {
-        let mut f = try!(File::open(&Path::new(config)));
+    pub fn from_file(config: &str) -> Result<Config, ConfigError> {
+        let mut f = File::open(&Path::new(config))?;
         let mut conf:String = "".to_string();
-        try!(f.read_to_string(&mut conf));
+        f.read_to_string(&mut conf)?;
         let mut parser = Parser::new(&conf);
         match parser.parse() {
             Some(t) => Ok(Config {
                             config: Value::Table(t)
                         }),
-            None => Err(PWError::TomlParseError(parser.errors))
+            None => Err(ConfigError::TomlParseError(parser.errors))
         }
     }
 
     ///! Save config to toml file
-    pub fn save(&self, config: &str) -> PWResult<()> {
-        let mut f = try!(OpenOptions::new().write(true).open(&Path::new(config)));
-        try!(writeln!(f, "{}", self.config));
+    pub fn save(&self, config: &str) -> Result<(), ConfigError> {
+        let mut f = OpenOptions::new().write(true).open(&Path::new(config))?;
+        writeln!(f, "{}", self.config)?;
         Ok(())
     }
 
@@ -87,8 +99,8 @@ impl Config {
     }
 
     ///! Set key to value, if value already exists, it's overwritten
-    pub fn set(&mut self, name: &str, val: Value) -> PWResult<()> {
-        if name.len() == 0 { return Err(PWError::EmptyKey) }
+    pub fn set(&mut self, name: &str, val: Value) -> Result<(), ConfigError> {
+        if name.len() == 0 { return Err(ConfigError::EmptyKey) }
         let mut curr = match self.config {
             Value::Table(ref mut hm) => hm,
             _ => unreachable!()
@@ -98,7 +110,7 @@ impl Config {
 
         for k in keys.clone().into_iter().take(keys.len()-1) {
             let mut tmp = curr;
-            if k.len() == 0 { return Err(PWError::EmptyKey) }
+            if k.len() == 0 { return Err(ConfigError::EmptyKey) }
             curr = match tmp.entry(k.to_string()) {
                 Entry::Vacant(slot) => match slot.insert(Value::Table(Table::new())) {
                     &mut Value::Table(ref mut t) => t,
@@ -120,7 +132,7 @@ impl Config {
             };
         }
         if keys[keys.len()-1].len() == 0 {
-            return Err(PWError::EmptyKey)
+            return Err(ConfigError::EmptyKey)
         }
 
         curr.insert(keys[keys.len()-1].to_string(), val);
@@ -140,7 +152,7 @@ fn insert_test() {
     assert_eq!(Some(12345), c.value_int("this.is.a.test"));
     match c.set("another..test", Value::Boolean(false)) {
         Ok(_) => panic!("That's not supposed to happen!"),
-        Err(PWError::EmptyKey) => {},
+        Err(ConfigError::EmptyKey) => {},
         _ => unreachable!()
     }
 

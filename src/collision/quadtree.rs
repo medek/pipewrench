@@ -1,7 +1,7 @@
 use std::rc::Rc;
-use super::super::Thingie as SpacialKey;
+use cgmath::BaseFloat as SpacialKey;
 use super::{AABB2, Intersect, Intersection, Circle};
-use nalgebra::Pnt2;
+use cgmath::Point2 as Pnt2;
 
 pub trait SpacialIndex {
     fn get_position<T: SpacialKey>(&self) -> Pnt2<T>;
@@ -20,8 +20,8 @@ impl<'a, S, T> QuadTree<S, T> where T: SpacialIndex + Sized, S: SpacialKey {
         QuadTree {
             bucket: Vec::with_capacity(capacity),
             children: None,
-            capacity: capacity,
-            volume: volume
+            capacity,
+            volume
         }
     }
 
